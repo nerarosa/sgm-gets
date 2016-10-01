@@ -83,8 +83,7 @@ class getvideos{
         if(isset($url_encoded_fmt_stream_map)){
             $my_formats_array = explode(',',$url_encoded_fmt_stream_map);
         }
-        else
-        {
+        else{
             return false;
         }
         if (count($my_formats_array) == 0) {
@@ -137,33 +136,20 @@ class getvideos{
 	
 	private function youtube(){
 		$data = $this->get_youtube($this->url);
+		$mp4link['link'] = [];
 		foreach($data['data'] as $link){
-			if($link['quality'] == 'hd720'){
-				$itemhd['url'] = $link['url'];
-				$itemhd['quan'] = '720';
+			if($link['quality'] == 'hd720'){				
+				array_push($mp4link['link'], ['url'=>$link['url'], 'quan'=>'720']);
 			}	
 			if($link['quality'] == 'medium'){
-				$itemlarge['url'] = $link['url'];
-				$itemlarge['quan'] = '480';
+				array_push($mp4link['link'], ['url'=>$link['url'], 'quan'=>'480']);
 			}	
 			if($link['quality'] == 'small'){
-				$itemmedium['url'] = $link['url'];
-				$itemmedium['quan'] = '360';
+				array_push($mp4link['link'], ['url'=>$link['url'], 'quan'=>'360']);
 				break;
 			}
 		}
-		
-		$mp4link['link'] = [];
-		if($itemhd){		
-			array_push($mp4link['link'], $itemhd);
-		}
-		if($itemlarge){	
-			array_push($mp4link['link'], $itemlarge);
-		}
-		if($itemmedium){	
-			array_push($mp4link['link'], $itemmedium);
-		}
-				
+
 		$mp4link['thumb'] = '';
 		
 		$this->directLinks($mp4link);
@@ -205,43 +191,19 @@ class getvideos{
 		$urls = explode('%3Dm', $data[1]);
 		$decode = urldecode($urls[0]);
 		$count = count($data);
-		$item = array();
+		
 		$mp4link['link'] = [];
-		if($count > 4) {
-			$v1080p = $decode.'=m37';
-			$v720p = $decode.'=m22';
-			$v360p = $decode.'=m18';
-			
-			$item['url'] = $v1080p;
-			$item['quan'] = '1080p';
-			array_push($mp4link['link'], $item);
-			
-			$item['url'] = $v720p;
-			$item['quan'] = '720p';
-			array_push($mp4link['link'], $item);
-			
-			$item['url'] = $v360p;
-			$item['quan'] = '360p';
-			array_push($mp4link['link'], $item);
+		if($count > 4) {			
+			array_push($mp4link['link'], ['url'=>$decode.'=m37', 'quan'=>'1080p']);
+			array_push($mp4link['link'], ['url'=>$decode.'=m22', 'quan'=>'720p']);
+			array_push($mp4link['link'], ['url'=>$decode.'=m18', 'quan'=>'360p']);
 		}
 		if($count > 3 && $count <= 4) {
-			$v720p = $decode.'=m22';
-			$v360p = $decode.'=m18';
-			
-			$item['url'] = $v720p;
-			$item['quan'] = '720p';
-			array_push($mp4link['link'], $item);
-			
-			$item['url'] = $v360p;
-			$item['quan'] = '360p';
-			array_push($mp4link['link'], $item);
+			array_push($mp4link['link'], ['url'=>$decode.'=m22', 'quan'=>'720p']);
+			array_push($mp4link['link'], ['url'=>$decode.'=m18', 'quan'=>'360p']);
 		}
 		if($count > 2 && $count <= 3) {
-			$v360p = $decode.'=m18';
-			
-			$item['url'] = $v360p;
-			$item['quan'] = '360p';
-			array_push($mp4link['link'], $item);
+			array_push($mp4link['link'], ['url'=>$decode.'=m18', 'quan'=>'360p']);
 		}
 		
 		$mp4link['thumb'] = '';
@@ -279,7 +241,6 @@ class getvideos{
 		preg_match('/<div class="download-link" style="display: none;"><a href="(.*)" id/', $data, $match);
 		
 		$mp4link['link'] = $match[1];
-		
 		$mp4link['thumb'] = '';
 		
 		$this->directLinks($mp4link);
@@ -288,26 +249,19 @@ class getvideos{
 	private function redtube(){
 		$data = $this->getContent($this->url);
 	
-		preg_match('/sources: {(.*)},/', $data, $src);
-		
+		preg_match('/sources: {(.*)},/', $data, $src);		
 		$jsonData = json_decode('{'.str_replace('\/', '/', $src[1]).'}', true);
 		
 		$mp4link['link'] = [];
-		if (array_key_exists('720', $jsonData)) {
-			$item['url'] = $jsonData['720'];
-			$item['quan'] = '720p';
-			array_push($mp4link['link'], $item);
+		if (array_key_exists('720', $jsonData)) {			
+			array_push($mp4link['link'], ['url'=>$jsonData['720'], 'quan'=>'720p']);
 		}
-		if (array_key_exists('480', $jsonData)) {
-			$item['url'] = $jsonData['480'];
-			$item['quan'] = '480p';
-			array_push($mp4link['link'], $item);
+		if (array_key_exists('480', $jsonData)) {			
+			array_push($mp4link['link'], ['url'=>$jsonData['480'], 'quan'=>'480p']);
 		}
 		if(array_key_exists('240', $jsonData)) {
-			$item['url'] = $jsonData['240'];
-			$item['quan'] = '240p';
-			array_push($mp4link['link'], $item);
-		}	
+			array_push($mp4link['link'], ['url'=>$jsonData['240'], 'quan'=>'240p']);
+		}
 		$mp4link['thumb'] = '';
 		
 		$this->directLinks($mp4link);
@@ -318,29 +272,24 @@ class getvideos{
 		preg_match_all('/var player_quality_(.*)\';/', $data, $match);
 		
 		$arrData = explode(';', $match[0][0]);		
-		$arrData = array_filter($arrData);		
+		$arrData = array_filter($arrData);
 		
 		$mp4link['link'] = [];
 		for($i = 0; $i < count($arrData); $i++){
 			$temp = explode(' = ', $arrData[$i], 2);
 			$link = trim($temp[1], "'");
 			$quan = $temp[0];
-			if (strpos($quan, '720p') !== false && $link != '') {
-				$item['url'] = $link;
-				$item['quan'] = '720p';
-				array_push($mp4link['link'], $item);
+			if (strpos($quan, '720p') !== false && $link != '') {				
+				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'720p']);
 			}
 			if (strpos($quan, '480p') !== false && $link != '') {
-				$item['url'] = $link;
-				$item['quan'] = '480p';
-				array_push($mp4link['link'], $item);
+				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'480p']);
 			}
 			if (strpos($quan, '240p') !== false && $link != '') {
-				$item['url'] = $link;
-				$item['quan'] = '240p';
-				array_push($mp4link['link'], $item);
+				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'240p']);
 			}
 		}	
+		unset($i);
 		
 		$mp4link['thumb'] = '';
 		
@@ -351,9 +300,7 @@ class getvideos{
 		$data = $this->getContent($this->url);
 	
 		$match = explode('}' ,explode('sources: {', $data)[1])[0];
-		
 		$match = trim(preg_replace('/\s+/', '', $match));
-		
 		$jsonData = explode(',', $match);		
 
 		$mp4link['link'] = [];
@@ -362,36 +309,26 @@ class getvideos{
 			$link = trim($temp[1], "'");
 			$quan = trim($temp[0], "'");
 			if ($quan == '1080_60' && $link != '') {				
-				$item['url'] = $link;
-				$item['quan'] = '1080HD';
-				array_push($mp4link['link'], $item);				
+				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'1080HD']);
 			}			
 			if ($quan == '1080' && $link != '') {
-				$item['url'] = $link;
-				$item['quan'] = '1080p';
-				array_push($mp4link['link'], $item);
+				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'1080p']);
 			}		
 			if ($quan == '720_60' && $link != '') {
-				$item['url'] = $link;
-				$item['quan'] = '720HD';
-				array_push($mp4link['link'], $item);
+				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'720HD']);
 			}
 			if ($quan == '720' && $link != '') {
-				$item['url'] = $link;
-				$item['quan'] = '720p';
-				array_push($mp4link['link'], $item);
+				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'720p']);
 			}
 			if ($quan == '480' && $link != '') {
-				$item['url'] = $link;
-				$item['quan'] = '480p';
-				array_push($mp4link['link'], $item);
+				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'480p']);
 			}
 			if($quan == '240' && $link != '') {
-				$item['url'] = $link;
-				$item['quan'] = '240p';
-				array_push($mp4link['link'], $item);
+				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'240p']);
 			}
 		}
+		unset($i);
+		
 		$mp4link['thumb'] = '';
 		
 		$this->directLinks($mp4link);
@@ -404,25 +341,17 @@ class getvideos{
 		$jsonData = json_decode('{'.str_replace('\/', '/', $match[1]).'}', true);
 				
 		$mp4link['link'] = [];
-		if (array_key_exists('quality_180p', $jsonData)) {
-			$item['url'] = $jsonData['quality_180p'];
-			$item['quan'] = '180p';
-			array_push($mp4link['link'], $item);
+		if (array_key_exists('quality_180p', $jsonData)) {			
+			array_push($mp4link['link'], ['url'=>$jsonData['quality_180p'], 'quan'=>'180p']);
 		}
 		if (array_key_exists('quality_240p', $jsonData)) {
-			$item['url'] = $jsonData['quality_240p'];
-			$item['quan'] = '240p';
-			array_push($mp4link['link'], $item);
+			array_push($mp4link['link'], ['url'=>$jsonData['quality_240p'], 'quan'=>'240p']);
 		}
 		if (array_key_exists('quality_480p', $jsonData)) {
-			$item['url'] = $jsonData['quality_180p'];
-			$item['quan'] = '180p';
-			array_push($mp4link['link'], $item);
+			array_push($mp4link['link'], ['url'=>$jsonData['quality_480p'], 'quan'=>'480p']);
 		}
 		if (array_key_exists('quality_720p', $jsonData)) {
-			$item['url'] = $jsonData['quality_720p'];
-			$item['quan'] = '720p';
-			array_push($mp4link['link'], $item);
+			array_push($mp4link['link'], ['url'=>$jsonData['quality_720p'], 'quan'=>'720p']);
 		}
 		
 		$mp4link['thumb'] = '';
@@ -566,25 +495,17 @@ class getvideos{
 		$xml = simplexml_load_file($xmlURL, 'SimpleXMLElement', LIBXML_NOCDATA);
 		
 		$id = $this->getNtcId($this->url);
-		
-		$item = array();
-		$mp4link['link'] = [];		
-		foreach ($xml->track->children() as $child) {
 
-			if($child->key == $id){
-				$item['url'] = $child->location;
-				$item['quan'] = '480p';
-				array_push($mp4link['link'], $item);
+		$mp4link['link'] = [];
+		foreach ($xml->track->children() as $child) {
+			if($child->key == $id){				
+				array_push($mp4link['link'], ['url'=>$child->location, 'quan'=>'480p']);
 				
 				if($child->highquality->count()){
-					$item['url'] = $child->highquality;
-					$item['quan'] = '720p';
-					array_push($mp4link['link'], $item);
+					array_push($mp4link['link'], ['url'=>$child->highquality, 'quan'=>'720p']);
 				}
 				if($child->lowquality->count()){
-					$item['url'] = $child->lowquality;
-					$item['quan'] = '360p';
-					array_push($mp4link['link'], $item);
+					array_push($mp4link['link'], ['url'=>$child->lowquality, 'quan'=>'360p']);
 				}
 				break;
 			}
@@ -598,30 +519,21 @@ class getvideos{
 		$hostSupport = 'http://api.anivn.com/?url=';		
 		$data = $this->getContent($hostSupport.$this->url);
 		
-		$jsonData = json_decode($data, true);
+		$jsonData = json_decode(str_replace('app=animevn.biz&', '', $data), true);
 		
-		$item = array();
 		$mp4link['link'] = [];
 		
 		if(array_key_exists('1080', $jsonData)){
-			$item['url'] = str_replace('app=animevn.biz&', '', $jsonData['1080']);
-			$item['quan'] = '1080p';
-			array_push($mp4link['link'], $item);
+			array_push($mp4link['link'], ['url'=>$jsonData['1080'], 'quan'=>'1080p']);
 		}
 		if(array_key_exists('720', $jsonData)){
-			$item['url'] = str_replace('app=animevn.biz&', '', $jsonData['720']);
-			$item['quan'] = '720p';
-			array_push($mp4link['link'], $item);
+			array_push($mp4link['link'], ['url'=>$jsonData['720'], 'quan'=>'720p']);
 		}
 		if(array_key_exists('480', $jsonData)){
-			$item['url'] = str_replace('app=animevn.biz&', '', $jsonData['480']);
-			$item['quan'] = '480p';
-			array_push($mp4link['link'], $item);
+			array_push($mp4link['link'], ['url'=>$jsonData['480'], 'quan'=>'480p']);
 		}
 		if(array_key_exists('360', $jsonData)){
-			$item['url'] = str_replace('app=animevn.biz&', '', $jsonData['360']);
-			$item['quan'] = '360p';
-			array_push($mp4link['link'], $item);
+			array_push($mp4link['link'], ['url'=>$jsonData['360'], 'quan'=>'360p']);
 		}
 		
 		$mp4link['thumb'] = '';
@@ -629,40 +541,40 @@ class getvideos{
 	}
 	
 	private function ggDriveIpv6(){
-		$get = $this->getContent($this->url);
-		$cat = explode(',["fmt_stream_map","', $get);
-		$cat = explode('"]', $cat[1]);
-		$cat = explode(',', $cat[0]);
-		foreach($cat as $link){
-			$cat = explode('|', $link);
-			$links = str_replace(array('\u003d', '\u0026'), array('=', '&'), $cat[1]);
-			if($cat[0] == 37) {$f1080p = $links;}
-			if($cat[0] == 22) {$f720p = $links;}
-			if($cat[0] == 35) {$f480p = $links;}
-			if($cat[0] == 43) {$f360p = $links;}
+		$data = $this->getContent($this->url);
+		$allRes = explode(',["fmt_stream_map","', $data);
+		$allRes = explode('"]', $allRes[1]);
+		$allRes = explode(',', $allRes[0]);
+		foreach($allRes as $link){
+			$allResol = explode('|', $link);
+			$links = str_replace(array('\u003d', '\u0026'), array('=', '&'), $allRes[1]);
+			if($allRes[0] == 37) {$f1080p = $links;}
+			if($allRes[0] == 22) {$f720p = $links;}
+			if($allRes[0] == 35) {$f480p = $links;}
+			if($allRes[0] == 43) {$f360p = $links;}
 		}
 		
-		$item = array();
 		$mp4link['link'] = [];
-		
-		if(isset($f1080p)){
-			$item['url'] = $f1080p;
-			$item['quan'] = '1080p';
-			
-			$AnimeVN = "<source src=\"".$f1080p."\" type=\"video/mp4\" data-res=\"1080\" />\n<source src=\"".$f720p."\" type=\"video/mp4\" data-res=\"720\" />\n<source src=\"".$f480p."\" type=\"video/mp4\" data-res=\"480\" />\n<source src=\"".$f360p."\" type=\"video/mp4\" data-res=\"360\" />";
+		if(isset($f1080p)){			
+			array_push($mp4link['link'], ['url'=>$f1080p, 'quan'=>'1080p']);
+			array_push($mp4link['link'], ['url'=>$f720p, 'quan'=>'720p']);
+			array_push($mp4link['link'], ['url'=>$f480p, 'quan'=>'480p']);
+			array_push($mp4link['link'], ['url'=>$f360p, 'quan'=>'360p']);
 		} elseif(isset($f720p)){
-			$item['url'] = $f720p;
-			$item['quan'] = '720p';
-			
-			$AnimeVN = "<source src=\"".$f720p."\" type=\"video/mp4\" data-res=\"720\" />\n<source src=\"".$f480p."\" type=\"video/mp4\" data-res=\"480\" />\n<source src=\"".$f360p."\" type=\"video/mp4\" data-res=\"360\" />";
+			array_push($mp4link['link'], ['url'=>$f720p, 'quan'=>'720p']);
+			array_push($mp4link['link'], ['url'=>$f480p, 'quan'=>'480p']);
+			array_push($mp4link['link'], ['url'=>$f360p, 'quan'=>'360p']);
 		} elseif(isset($f480p)){
-			$AnimeVN = "<source src=\"".$f480p."\" type=\"video/mp4\" data-res=\"480\" />\n<source src=\"".$f360p."\" type=\"video/mp4\" data-res=\"360\" />";
+			array_push($mp4link['link'], ['url'=>$f480p, 'quan'=>'480p']);
+			array_push($mp4link['link'], ['url'=>$f360p, 'quan'=>'360p']);
 		} elseif(isset($f360p)){
-			$AnimeVN = "<source src=\"".$f360p."\" type=\"video/mp4\" data-res=\"360\" />";
-		} else {
-			$AnimeVN = '<source src="https://lh3.googleusercontent.com/XpE2g3UEIu7WblZ1P-Elc7KFutP13AbO1algeZgqXV0=m37" type="video/mp4" data-res="360" />';
+			array_push($mp4link['link'], ['url'=>$f360p, 'quan'=>'360p']);
+		} else {			
+			array_push($mp4link['link'], ['url'=>'https://lh3.googleusercontent.com/XpE2g3UEIu7WblZ1P-Elc7KFutP13AbO1algeZgqXV0=m37', 'quan'=>'360p']);
 		}
-		return $AnimeVN;
+		
+		$mp4link['thumb'] = '';
+		$this->directLinks($mp4link);
 	} 
 	
 	/*private function loginClipvn(){
