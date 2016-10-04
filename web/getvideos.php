@@ -47,7 +47,7 @@ class getvideos{
 	private function decodeUrl($url){
 		$key = base64_decode("ov0DVar9m275gKByHTqsYg==");
 		
-		$_fixUrl = base64_decode(str_replace(' ', '+', $url));
+		$_fixUrl = base64_decode(str_replace(' ', '+', urldecode($url)));
 		
 		try {
 			$real_url = Crypto::Decrypt($_fixUrl, $key);
