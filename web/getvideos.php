@@ -227,7 +227,7 @@ class getvideos{
 	
 		$data = explode('video: {', $data);
 		$match = explode('},', $data[1]);				
-		preg_match('/file: \'(.*)\'/' ,explode(',', $match[0])[0], $link);
+		$link = explode('\'' ,explode('\',', $match[0])[0]);
 		
 		$mp4link['link'] = $link[1];
 		$mp4link['thumb'] = '';
