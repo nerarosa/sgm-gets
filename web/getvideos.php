@@ -76,7 +76,7 @@ class getvideos{
 
 	private function get_youtube($url){        
         $id = $this->get_id_youtube($url);
-        $video_info = get_content('http://www.youtube.com/get_video_info?video_id=' . $id);
+        $video_info = $this->getContent('http://www.youtube.com/get_video_info?video_id=' . $id);
         $url_encoded_fmt_stream_map = '';
         parse_str($video_info);
         $return['title'] = $title;
