@@ -223,7 +223,7 @@ class getvideos{
 	}
 	
 	private function xhamster(){
-		$data = $this->getContent($this->url);
+		$data = $this->getContent(str_replace('http://', 'https://', $this->url));
 	
 		$data = explode('video: {', $data);
 		$match = explode('},', $data[1]);				
