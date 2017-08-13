@@ -58,7 +58,7 @@ class getvideos{
 		} catch (CannotPerformOperationException $ex) {
 			die('Cannot safely perform decryption');
 		}
-		
+
 		return $real_url;
 	}
 	
@@ -171,7 +171,6 @@ class getvideos{
 		curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 60);
 		//curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Expect:'));
 		if($encode === true)
 			curl_setopt($ch, CURLOPT_ENCODING, 'gzip ,deflate');
 		if($proxy === true){
@@ -186,8 +185,26 @@ class getvideos{
 	
 	private function ggPhotos(){
 		$get = $this->getContent($this->url);
-	
-		$data = explode('url\u003d', $get);
+		
+		$result = preg_match('/79468658":\[\[\[(.*)"\]/', $get, $matches);
+		$allStream = explode(',"', $matches[1])[2];
+		$itemStream = explode(',', json_decode('["'.$allStream.'"]')[0]);
+		
+		$mp4link['link'] = [];
+		
+		for($i = 0; $i < count($itemStream); $i++){
+			parse_str(urldecode($itemStream[$i]), $parseString);
+			
+			if(strpos($parseString['type'], 'video/mp4') !== false){
+				$quan = '360p';
+				if($parseString['itag'] == '22') $quan = '720p';
+				elseif($parseString['itag'] == '37') $quan = '1080p';
+				
+				array_push($mp4link['link'], ['url'=>$parseString['url'], 'quan'=>$quan]);
+			}
+		}
+		
+		/* $data = explode('url\u003d', $get);
 		$urls = explode('%3Dm', $data[1]);
 		$decode = urldecode($urls[0]);
 		$count = count($data);
@@ -202,9 +219,10 @@ class getvideos{
 			array_push($mp4link['link'], ['url'=>$decode.'=m22', 'quan'=>'720p']);
 			array_push($mp4link['link'], ['url'=>$decode.'=m18', 'quan'=>'360p']);
 		}
-		if($count > 2 && $count <= 3) {
+		if($count >= 2 && $count <= 3) {
 			array_push($mp4link['link'], ['url'=>$decode.'=m18', 'quan'=>'360p']);
-		}
+		} */
+		
 		
 		$mp4link['thumb'] = '';
 		
@@ -224,12 +242,12 @@ class getvideos{
 	
 	private function xhamster(){
 		$data = $this->getContent(str_replace('http://', 'https://', $this->url));
-	
+		
 		$data = explode('video: {', $data);
 		$match = explode('},', $data[1]);				
 		$link = explode('\'' ,explode('\',', $match[0])[0]);
 		
-		$mp4link['link'] = $link[1];
+		$mp4link['link'] = $this->get_final_url($link[1]);
 		$mp4link['thumb'] = '';
 		
 		$this->directLinks($mp4link);
@@ -619,4 +637,81 @@ class getvideos{
 		
 		var_dump($linkmp4);
 	}*/
+	
+	
+/**
+ * get_redirect_url()
+ * Gets the address that the provided URL redirects to,
+ * or FALSE if there's no redirect. 
+ *
+ * @param string $url
+ * @return string
+ */
+function get_redirect_url($url){
+    $redirect_url = null; 
+
+    $url_parts = @parse_url($url);
+    if (!$url_parts) return false;
+    if (!isset($url_parts['host'])) return false; //can't process relative URLs
+    if (!isset($url_parts['path'])) $url_parts['path'] = '/';
+
+    $sock = fsockopen($url_parts['host'], (isset($url_parts['port']) ? (int)$url_parts['port'] : 80), $errno, $errstr, 30);
+    if (!$sock) return false;
+
+    $request = "HEAD " . $url_parts['path'] . (isset($url_parts['query']) ? '?'.$url_parts['query'] : '') . " HTTP/1.1\r\n"; 
+    $request .= 'Host: ' . $url_parts['host'] . "\r\n"; 
+    $request .= "Connection: Close\r\n\r\n"; 
+    fwrite($sock, $request);
+    $response = '';
+    while(!feof($sock)) $response .= fread($sock, 8192);
+    fclose($sock);
+
+    if (preg_match('/^Location: (.+?)$/m', $response, $matches)){
+        if ( substr($matches[1], 0, 1) == "/" )
+            return $url_parts['scheme'] . "://" . $url_parts['host'] . trim($matches[1]);
+        else
+            return trim($matches[1]);
+
+    } else {
+        return false;
+    }
+
+}
+
+/**
+ * get_all_redirects()
+ * Follows and collects all redirects, in order, for the given URL. 
+ *
+ * @param string $url
+ * @return array
+ */
+function get_all_redirects($url){
+    $redirects = array();
+    while ($newurl = $this->get_redirect_url($url)){
+        if (in_array($newurl, $redirects)){
+            break;
+        }
+        $redirects[] = $newurl;
+        $url = $newurl;
+    }
+    return $redirects;
+}
+
+/**
+ * get_final_url()
+ * Gets the address that the URL ultimately leads to. 
+ * Returns $url itself if it isn't a redirect.
+ *
+ * @param string $url
+ * @return string
+ */
+function get_final_url($url){
+    $redirects = $this->get_all_redirects($url);
+    if (count($redirects)>0){
+        return array_pop($redirects);
+    } else {
+        return $url;
+    }
+}
+	
 }
