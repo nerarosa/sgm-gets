@@ -188,9 +188,10 @@ class getvideos{
 		
 		$result = preg_match('/79468658":\[\[\[(.*)"\]/', $get, $matches);
 		$allStream = explode(',"', $matches[1])[2];
-		$itemStream = explode(',', json_decode('["'.$allStream.'"]')[0]);
+		$itemStream = explode(',', json_decode('"'.trim($allStream,'"').'"'));
 		
 		$mp4link['link'] = [];
+		
 		
 		for($i = 0; $i < count($itemStream); $i++){
 			parse_str(urldecode($itemStream[$i]), $parseString);
