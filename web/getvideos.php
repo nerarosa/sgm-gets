@@ -287,24 +287,23 @@ class getvideos{
 	}
 	
 	private function pornhub(){		
-		$data = $this->getContent($this->url);
-		preg_match_all('/var player_quality_(.*)\';/', $data, $match);
+		$data = $this->getContent(preg_replace('/http:/', 'https:', $this->url));
 		
-		$arrData = explode(';', $match[0][0]);		
-		$arrData = array_filter($arrData);
+		preg_match('/"mediaDefinitions":\[(.*)\],"video_unavailable_country/', $data, $match);
+		
+		$jsonData = json_decode('['.$match[1].']');		
 		
 		$mp4link['link'] = [];
-		for($i = 0; $i < count($arrData); $i++){
-			$temp = explode(' = ', $arrData[$i], 2);
-			$link = trim($temp[1], "'");
-			$quan = $temp[0];
-			if (strpos($quan, '720p') !== false && $link != '') {				
+		for($i = 0; $i < count($jsonData); $i++){
+			$link = $jsonData[$i]->videoUrl;
+			$quan = $jsonData[$i]->quality;
+			if (strpos($quan, '720') !== false && $link != '') {				
 				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'720p']);
 			}
-			if (strpos($quan, '480p') !== false && $link != '') {
+			if (strpos($quan, '480') !== false && $link != '') {
 				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'480p']);
 			}
-			if (strpos($quan, '240p') !== false && $link != '') {
+			if (strpos($quan, '240') !== false && $link != '') {
 				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'240p']);
 			}
 		}	
@@ -316,17 +315,16 @@ class getvideos{
 	}
 	
 	private function youporn(){
-		$data = $this->getContent($this->url);
-	
-		$match = explode('}' ,explode('sources: {', $data)[1])[0];
-		$match = trim(preg_replace('/\s+/', '', $match));
-		$jsonData = explode(',', $match);		
+		$data = $this->getContent(preg_replace('/http:/', 'https:', $this->url));
+		preg_match('/page_params.video.mediaDefinition = \[(.*)\];/', $data, $match);
+		
+		$jsonData = json_decode('['.$match[1].']');
 
 		$mp4link['link'] = [];
 		for($i = 0; $i < count($jsonData); $i++){
-			$temp = explode(':', $jsonData[$i], 2);
-			$link = trim($temp[1], "'");
-			$quan = trim($temp[0], "'");
+			
+			$link = $jsonData[$i]->videoUrl;
+			$quan = $jsonData[$i]->quality;
 			if ($quan == '1080_60' && $link != '') {				
 				array_push($mp4link['link'], ['url'=>$link, 'quan'=>'1080HD']);
 			}			
