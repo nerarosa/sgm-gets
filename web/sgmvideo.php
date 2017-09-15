@@ -9,7 +9,7 @@ header("Content-type: application/json; charset=utf-8");
 //header('Access-Control-Allow-Origin: https://sexygirlmedia.blogspot.com', false);
 
 if (in_array($_SERVER['http_origin'], $allowed_domains)) {
-	header('Access-Control-Allow-Origin', $_SERVER['http_origin']);
+	header('Access-Control-Allow-Origin : ' . $_SERVER['http_origin']);
 }
 
 header("Access-Control-Allow-Credentials: true ");
