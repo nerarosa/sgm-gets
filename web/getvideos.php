@@ -1,5 +1,6 @@
 <?php
 require_once("Crypto.php");
+//require_once("JavaScriptUnpacker.php");
 class getvideos{
 	private $url;
 	
@@ -39,6 +40,10 @@ class getvideos{
 			$this->zingtv();
 		}elseif(strpos($this->url , 'v.nhaccuatui.com') !== false){
 			$this->nct();
+		}elseif(strpos($this->url , 'vidoza.net') !== false){
+			//$this->vidoza();
+		}elseif(strpos($this->url , 'watchers.to') !== false){
+			//$this->watchersto();
 		}elseif(strpos($this->url, 'drive.google.com') || strpos($this->url, 'docs.google.com')){
 			$this->ggDrive();
 		}
@@ -186,8 +191,12 @@ class getvideos{
 	private function ggPhotos(){
 		$get = $this->getContent($this->url);
 		
-		$result = preg_match('/79468658":\[\[\[(.*)"\]/', $get, $matches);
-		$allStream = explode(',"', $matches[1])[2];
+		$result = preg_match('/"79468658":\[\[\[(.*)\]/', $get, $matches);
+		
+		$allStream = explode('",', explode(',"', $matches[1])[2])[0];
+		
+		//var_dump($allStream);
+		
 		$itemStream = explode(',', json_decode('"'.trim($allStream,'"').'"'));
 		
 		$mp4link['link'] = [];
@@ -712,5 +721,52 @@ function get_final_url($url){
         return $url;
     }
 }
+	
+	private function vidoza(){
+		$data = $this->getContent($this->url);
+		//var_dump($data);
+		preg_match('/sources: \[{file:"(.*)",label/', $data, $src);		
+		
+		$mp4link['link'] = [];
+		
+		array_push($mp4link['link'], ['url'=>$src[1], 'quan'=>'480p']);
+		
+		$mp4link['thumb'] = '';
+		
+		$this->directLinks($mp4link);
+	}
+	
+	private function watchersto(){
+		$data = $this->getContent($this->url);
+		
+		preg_match('/<script type=\'text\/javascript\'>eval(.*?)split\(\'|\'\)\)\)/', $data, $matches);
+				
+		$packedJs = 'eval' . $matches[1] . 'split(\'|\')))';
+		
+		//var_dump($packedJs);
+		
+		$unpacker = new JavaScriptUnpacker();
+		$unpacked = $unpacker->Unpack($packedJs);
+		
+		//var_dump($unpacked);
+		
+		preg_match('/file:"(.*)v\.mp4/', $unpacked, $urlData);
+		
+		//var_dump($urlData);
+		
+		$mp4link['link'] = [];
+		
+		$videoUrl = $urlData[1];
+		if(strpos($videoUrl, 'file:"')){
+			$videoUrl = explode('file:"', $videoUrl)[1];
+		}
+		
+		array_push($mp4link['link'], ['url'=>$videoUrl . 'v.mp4', 'quan'=>'480p']);
+		
+		$mp4link['thumb'] = '';
+		
+		$this->directLinks($mp4link);
+	}
+	
 	
 }
